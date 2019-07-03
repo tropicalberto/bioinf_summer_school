@@ -1,5 +1,5 @@
 ---
-title: "tuesday"
+title: "tuesday bioinf school"
 author: "alberto gil"
 date: "7/2/2019"
 output: html_document
@@ -9,22 +9,784 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r, message=FALSE}
+library(Biostrings)
+library(tidyverse)
+library(ggplot2)
+library("ggbeeswarm") # avoid overlapping points 
+# library(patchwork)
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+head( methods(class = "DNAStringSet") )
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+# methods 
+
+```{r}
+methods(generic = "reverseComplement")
+```
+
+# GenomicRanges package
+
+Examples: 
+* Inference of gene locations
+* reads alignments to quantify gene expression
+* infer location of chipseq reads (location of the TF binding site to the closest gene)
+
+```{r, echo=FALSE}
+library(GenomicRanges)
+```
+
+## GRange 
+
+### Exon
+
+`Grange`: class. includes genomic locations & associations
+* seqnames: could be chromosomes, contigs, ...
+* star (*) means __unknown strand__
+
+```{r}
+# + = plus strand 
+exon = GRanges(c('chr1:20-30:+', 'chr1:40-50:+', "chr1:45-55")) 
+exon
+```
+
+```{r}
+exon = GRanges(c('chr1:20-30:+', 'chr1:40-50:+', "chr1:45-55:+")) 
+```
+
+exon is a vector (like DNAstring)
+```{r}
+length(exon)
+```
+
+start coordinate
+```{r}
+start(exon)
+```
+
+```{r}
+end(exon)
+```
+
+Implementation of bioconductor assumes that intervals are closed intervals (in the operations)
+* e.g. 40 to 50: 50 - 40 + 1 = 11
+
+```{r}
+width(exon)
+```
+
+Collapse all exons regions
+
+```{r}
+reduce(exon)
+```
+
+Disjoint range 
+```{r}
+disjoin(exon)
+```
+
+```{r}
+promoters(exon, upstream=2000, downstream=3000)
+```
+
+Project reads onto the genome 
+* Interpretation: 19 zeros, 11 ones, 9 zeros, 5 ones, 6 twos, 5 ones 
+* (see representation in next chunk for mvisual representation)
+```{r}
+coverage(exon)
+```
+
+```{r}
+coverage(exon) %>% unlist() %>% as.integer()
+```
+
+Coerce it as granges
+```{r}
+cvg <- coverage(exon)
+cvg <- cvg %>% as('GRanges')
+cvg
+```
+
+```{r}
+granges(cvg)
+```
+
+You can add elements to this dataframe
+```{r}
+cvg$score <- c(1,0,0,4,3,5)
+cvg
+```
+
+
+```{r}
+mcols(cvg)
+```
+
+```{r}
+df <- DataFrame(
+  i   = 1:3,
+  dna = DNAStringSet(c('AAA','CCC','GGG')),
+  gr  = exon
+)
+df
+```
+
+
+
+### SNP 
+
+```{r}
+snp <- GRanges(c('chr1:23435','chr2:54323'))
+```
+
+Shift SNP locations (e.g. if another reference was used):
+```{r}
+shift(snp, 1)
+```
+
+Extend SNP ranges: 
+```{r}
+flank(snp, 10)
+```
+
+How many of the exons contain SNPs inside, what is the overlap?
+```{r}
+snp <- GRanges(c('chr1:15:+','chr1:25:+','chr1:35:+'))
+countOverlaps(snp, exon)
+```
+
+Viceversa: 
+```{r}
+countOverlaps(exon, snp)
+```
+
+```{r}
+findOverlaps(snp, exon)
+```
+
+```{r}
+snp[snp %over% exon]
+```
+
+
+```{r}
+sessionInfo()
+```
+
+# Visualizations
+
+## Base plots
+
+```{r}
+head(DNase)
+```
+
+```{r}
+{
+  plot(DNase$conc, DNase$density,
+     xlab="conc", ylab="density",
+     col=DNase$Run, cex=3)
+  abline(v=DNase$conc, lwd=0.05, lty="dotted")
+}
+```
+
+```{r}
+hist(DNase$conc)
+```
+
+```{r}
+boxplot(density ~ Run, data=DNase)
+```
+
+## GGplot
+
+```{r}
+ggplot(data=DNase, aes(x=Run, y=density, color=Run)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data=DNase, aes(x=conc, y=density, color=Run)) + geom_point(shape=1, size=2) + 
+  geom_smooth(method="loess")
+```
+
+## Hiiragi2013 dataset 
+```{r, message=FALSE}
+load("hiiragi2013.rda")
+library(Biobase)
+```
+
+```{r}
+hiiragi2013
+```
+
+```{r}
+dim(hiiragi2013)
+```
+
+Extract quantitative values
+```{r}
+head(exprs(hiiragi2013))
+```
+
+Extract sample annotations
+```{r}
+# View(pData(hiiragi2013))
+```
+
+```{r}
+dftx = data.frame(t(exprs(hiiragi2013)), pData(hiiragi2013))
+```
+
+```{r}
+ggplot(dftx, aes(x=X1426642_at, y = X1418765_at)) + 
+  geom_point(aes(colour=sampleColour)) + 
+  geom_smooth()
+```
+
+```{r}
+selectedProbes <- c(Fgf4 = "1420085_at", Gata4 = "1418863_at",
+                    Gata6 = "1425463_at",  Sox2 = "1416967_at")
+```
+
+```{r}
+library(dplyr)
+library(tidyverse)
+```
+
+```{r}
+tmp <- data.frame(t(exprs(hiiragi2013[selectedProbes, ])))
+names(tmp) <- names(selectedProbes)
+tmp$sample <- rownames(tmp)
+```
+
+Wide to long format 
+
+```{r}
+genes <- gather(tmp, "gene","expression", -sample)
+head(genes)
+```
+
+```{r}
+genes %>%
+    filter(gene == "Gata4") %>%
+    ggplot(aes(x = expression)) + geom_histogram()
+
+```
+
+```{r}
+p <- ggplot(genes, aes(x = gene, y = expression, fill = gene))
+bxplot <- p + geom_boxplot()
+bxplot
+```
+
+```{r}
+p <- ggplot(genes, aes(x = gene, y = expression, fill = gene))
+bxplot <- p + geom_violin()
+bxplot
+```
+
+### Beeswarm plots 
+```{r}
+jtrplot <- p +
+    geom_jitter(aes(colour = gene)) +
+    theme(legend.position = "none")
+jtrplot
+```
+
+```{r}
+dotplot <- p + geom_dotplot(binaxis = "y", binwidth = 1/6,
+                            stackdir = "center", stackratio = 0.75,
+                            aes(color = gene)) +
+    theme(legend.position = "none")
+dotplot
+```
+
+Beeplot: to avoid overlapping points 
+
+```{r}
+beeplot <- p + geom_beeswarm(aes(color = gene)) + 
+    theme(legend.position = "none")
+beeplot
+```
+
+##### TODO 
+```{r}
+# jtrplot + dotplot + beeplot
+```
+
+```{r}
+dfx <- as.data.frame(Biobase::exprs(hiiragi2013))
+
+scp <- ggplot(dfx, aes(x=`59 E4.5 (PE)`, y=`92 E4.5 (FGF4-KO)`)) + geom_point()
+scp
+```
+
+
+```{r}
+scp <- ggplot(dfx, aes(x=`59 E4.5 (PE)`, y=`92 E4.5 (FGF4-KO)`)) + geom_point(alpha=0.1)
+scp
+```
+
+```{r}
+scp <- ggplot(dfx, aes(x=`59 E4.5 (PE)`, y=`92 E4.5 (FGF4-KO)`)) + geom_density2d(h=0.5, bins=60)
+scp
+```
+
+```{r}
+scp <- ggplot(dfx, aes(x=`59 E4.5 (PE)`, y=`92 E4.5 (FGF4-KO)`)) + geom_density2d()
+scp
+```
+
+```{r}
+scp <- ggplot(dfx, aes(x=`59 E4.5 (PE)`, y=`92 E4.5 (FGF4-KO)`)) + geom_hex()
+scp
+```
+
+### Facet grid 
+
+
+### Plotly
+
+Useful to check annotations of data points 
+
+```{r, message=FALSE}
+library("plotly")
+```
+
+```{r}
+scp <- ggplot(dfx[1:100, ],
+              aes(x= `59 E4.5 (PE)`, y = `92 E4.5 (FGF4-KO)`))
+
+scp2 <- scp + geom_point()
+ggplotly(scp2)
+```
+
+# Session 3 - Summarized Experiment
+
+## Summarized experiment levels 
+
+```{r, message=FALSE}
+library(SummarizedExperiment)
+library(airway)
+set.seed(123)
+
+data(airway)
+```
+
+```{r}
+airway
+```
+
+Rows: Ensemble genes 
+columns: samples
+
+```{r}
+dim(airway)
+```
+
+```{r}
+dim(assay(airway))
+```
+
+```{r}
+nrow(colData(airway))
+```
+
+```{r}
+dplyr::glimpse( dimnames(airway) )
+```
+
+```{r}
+colData(airway)
+```
+
+No rowdata: 
+```{r}
+rowData(airway)
+```
+
+rowRanges:
+* 1 entry per row 
+* contains info about the exons 
+```{r}
+rowRanges(airway)
+```
+
+`Metadata` function 
+
+```{r}
+metadata(airway)
+```
+
+```{r}
+message(class(assay(airway)), dim(assay(airway)))
+```
+```{r}
+head(assay(airway))
+```
+
+## Matrix behavior of summarized type
+matrix: all elements must be of the same type 
+
+```{r}
+m <- matrix(
+    rnorm(12), nrow = 4, ncol = 3,
+    dimnames = list(letters[1:4], LETTERS[1:3])
+)
+m
+```
+
+```{r}
+dim(m)
+```
+
+```{r}
+dimnames(m)
+```
+
+```{r}
+m[,1,drop=FALSE]
+```
+SummarizedExperiment has all the matrix-like interface functions incorporated
+
+```{r}
+subset <- airway[1:5,1:4]
+```
+
+```{r}
+assay(subset)
+```
+
+```{r}
+colData(subset)
+```
+
+```{r}
+rowRanges(subset)
+```
+
+## Matrix operations
+
+```{r}
+rowSums(m)
+```
+
+```{r}
+colSums(m)
+```
+
+##### Exercises 
+
+Overall sample counts quantification
+* Representation of technical variation between samples 
+
+```{r}
+colSums(assay(airway))
+```
+
+* Average number of reads per gene  (not necessarily gene expression, because read counts depend on gene length, etc.)
+
+```{r}
+genemeans <- rowMeans(log(assay(airway) + 1, base = exp(1)))
+ggplot(data=data.frame(genemeans),
+       aes(x=genemeans)) +
+  geom_histogram()
+```
+
+
+## Subsetting SummarizedExperiments 
+
+```{r}
+colData(airway)
+```
+
+```{r}
+airway$dex
+```
+ 
+ Exercise: 
+ 
+```{r}
+colData(airway[,airway$dex == 'untrt'])
+```
+
+* **Exercise** Remove all the rows from airway that had no gene expression across all samples. How many rows had no expression? Re-calculate the histogram of log-transoformed average expression with these rows excluded.
+
+```{r}
+nullgenes <- rowSums(assay(airway)) == 0
+airwaynonull <- airway[!nullgenes,,drop=FALSE]
+table(nullgenes)
+```
+
+```{r}
+genemeans <- rowMeans(log(assay(airwaynonull) + 1, base = exp(1)))
+ggplot(data=data.frame(genemeans),
+       aes(x=genemeans)) +
+  geom_histogram()
+```
+
+## The list-like interface of GRangesList
+ 
+Endomorphisms of list: subsetting them or applying functions will yield another list as output. **Except** for double squared brackets 
+
+
+```{r}
+a <- list(v=seq(1,5), names = c('manola','carmona'))
+lengths(a)
+```
+
+## another 
+
+seqinfo contains info of genome annotation from the genomic data
+* circular, sequence lengths, genome 
+
+```{r}
+r <- rowRanges(airway)
+seqinfo(r)
+```
+
+Annotation data can sometimes be accessed from browseVignetteS:
+
+```{r}
+# browseVignettes("airway")
+```
+
+```{r, message=FALSE }
+library(dplyr)
+```
+
+```{r}
+seqinfo(r) %>% as('GRanges') %>% subset(seqnames == 14) -> chr14
+chr14
+```
+
+**Over** = overlaps  
+
+```{r}
+rowRanges(airway)[rowRanges(airway) %over% chr14]
+```
+
+```{r}
+ridx <- rowRanges(airway) %over% chr14
+airway[ridx,]
+```
+
+## Provenance
+#TODO
+
+# Session 4 - Working with biological annotations 
+
+## Mapping between symbols
+
+### org packages
+ 
+Look for packages with org in their name
+
+* org =  organism-based
+* hs = homo sapiens 
+* eg = entrez gene id are central symbols 
+
+```{r}
+BiocManager::available("^org\\.")
+```
+
+```{r, message = FALSE}
+# BiocManager::install("org.Hs.eg.db")
+library(org.Hs.eg.db)
+library(AnnotationHub)
+org <- org.Hs.eg.db
+```
+
+keytypes availabel for org? 
+```{r}
+keytypes(org)
+```
+
+Things that we can map to 
+```{r}
+columns(org)
+```
+
+Mappings can be done via:
+* 1 to 1 mapping
+* 1 to many
+
+```{r}
+ensid <- sample(rownames(airwaynonull), 10)
+```
+
+### Mappings via `mapIds`
+
+```{r}
+mapIds(org, ensid, "SYMBOL", "ENSEMBL") %>% tibble::enframe("Ensemble","Symbol")
+```
+
+```{r}
+mapIds(org, ensid, "GENENAME", "ENSEMBL") %>% tibble::enframe("GeneName","ENSEMBL")
+```
+
+Multiple mappings: 
+```{r}
+AnnotationDbi::select(org, ensid, c("ENTREZID", "SYMBOL"), "ENSEMBL")
+```
+
+```{r}
+AnnotationDbi::select(org, ensid, c("GO"), "ENSEMBL")
+```
+
+```{r}
+goid <- select(org, ensid, "GO", "ENSEMBL") %>% as_tibble()
+head(goid)
+```
+
+#### Package with similar structure for GO terms
+```{r}
+library(GO.db)
+```
+
+```{r}
+columns(GO.db)
+```
+
+```{r}
+keytypes(GO.db)
+```
+
+```{r}
+gid <- unique(head(goid$GO))
+gid
+```
+
+```{r}
+AnnotationDbi::select(GO.db, gid, "TERM", "GOID")
+```
+
+### AnnotationHub Cloud resource 
+Good alternative: annotation hub (web service) --> database
+
+```{r, message=FALSE}
+library(AnnotationHub)
+```
+
+beware if there are multiple versions of the same thing (check **metadata columns**)
+
+```{r}
+hub <- AnnotationHub()
+query(hub, "^org\\.")
+```
+
+```{r}
+hub["AH70564"]
+```
+
+```{r}
+atorg <- hub[["AH70564"]]
+```
+
+```{r}
+zoo <- hub["AH70564"]
+```
+
+## Transcript annotations 
+
+### TxDb packages
+Look for available packages
+
+```{r}
+BiocManager::available("^TxDb\\.Hsap") %>% tibble::enframe(name=NULL)
+```
+
+```{r}
+query(hub, "^TxDb\\.Hsap")
+```
+
+```{r}
+library(TxDb.Hsapiens.UCSC.hg38.knownGene)
+```
+
+```{r}
+txdb <- TxDb.Hsapiens.UCSC.hg38.knownGene
+```
+
+```{r}
+# Look for exons
+ex <- exons(txdb)
+ex
+```
+
+```{r}
+transcripts(txdb)
+```
+
+```{r}
+exByTx = exonsBy(txdb, "tx")
+exByTx
+```
+
+```{r}
+which.max(lengths(exByTx))
+```
+
+Exons from the gene: 
+
+```{r}
+exByTx[31375]
+```
+
+
+### TCGA 
+```{r}
+BiocManager::available("curate")
+```
+
+Download data from TCGA
+```{r}
+library(curatedTCGAData)
+```
+
+```{r}
+curatedTCGAData()
+```
+
+```{r}
+curatedTCGAData("BRCA")
+```
+
+```{r}
+mae <- curatedTCGAData("BRCA", c("GISTIC_AllByGene", "RNASeq2GeneNorm"), dry.run=FALSE)
+```
+
+```{r}
+mae
+```
+
+```{r}
+names(assays(mae))
+```
+
+```{r}
+mae[["BRCA_RNASeq2GeneNorm-20160128"]]
+```
+
+example: calculate distribution of library sizes
+
+```{r}
+mae[["BRCA_RNASeq2GeneNorm-20160128"]] %>% 
+  assay () %>%
+  colSums() %>% 
+  hist()
+```
+
+## TODO 
+
+biomart, etc 
+
+# Session info
+```{r}
+sessionInfo()
+```
+
