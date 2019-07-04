@@ -1,0 +1,465 @@
+---
+title: “Thursday notes"
+author: “Alberto Gil"
+date: " `r format(Sys.time(), '%A %B %d, %Y (%H:%M:%S)')` "
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    code_folding: hide
+  word_document: default
+geometry: a4paper,headheight=80pt,bottom=30mm,footskip=60pt,right=16mm,left=22mm
+fontsize: 9pt
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Session 1 RNAseq
+
+Single strand or double strand. With double strand we will have more info and it will be more easy to infer from which gene is your gene coming from
+
+Strand specificity: situation B shows a better protocol
+
+Oxford Nanopore: to get longer reads, useful to identify isoforms. Quality of reads is lower.
+
+FASTq header --> useful especially for public data, to see if data is from different batches
+
+**Phred score** probability that you're wrong
+
+Capital letters in base quality part --> good quality read
+
+## Alignment based RNAseq workflow
+
+1) Align
+2) Count reads that overlap each gene
+3) Counting analysis
+
+### genomic locations
+* gtf file (more standard). 1 row per each genomic region
+* gff file
+
+### STAR
+* sjdbOverhang: set it minimum to read length minus 1. The higher the number, the longer it will take to run the alignment
+
+Cigar string doesnt tell you about matches/mismatches
+
+## Alignment-free RNAseq workflow 
+
+sum of TPM is always 10^6, with RPKM this is not the case
+
+# Session 2: practical RNAseq 
+
+```{r}
+datadir <- "~/bioinf_summer_school/"
+```
+
+Metadata:
+```{r}
+meta <- read.delim(paste0(datadir, "/airway/airway_meta.txt"), 
+                   header = TRUE, as.is = TRUE)
+rownames(meta) <- meta$names
+meta$dex <- factor(meta$dex)
+meta$cell <- factor(meta$cell)
+meta
+```
+
+```{r}
+fc <- readRDS(paste0(datadir, "/airway/featureCounts/star_featurecounts.rds"))
+names(fc)
+```
+
+```{r}
+counts_featurecounts <- fc$counts
+head(counts_featurecounts)
+```
+
+```{r}
+dim(counts_featurecounts)
+```
+```{r}
+fc$stat
+```
+
+```{r}
+suppressPackageStartupMessages({
+  library(tximeta)
+  library(DESeq2)
+  library(org.Hs.eg.db)
+  library(SummarizedExperiment)
+})
+```
+
+```{r}
+## List all quant.sf output files from Salmon
+salmonfiles <- paste0(datadir, "airway/salmon/", meta$names, "/quant.sf")
+names(salmonfiles) <- meta$names
+stopifnot(all(file.exists(salmonfiles)))
+
+## Add a column "files" to the metadata table. This table must contain at least
+## two columns: "names" and "files"
+coldata <- cbind(meta, files = salmonfiles, stringsAsFactors = FALSE)
+
+## Import quantifications on the transcript level
+st <- tximeta::tximeta(coldata)
+
+## Summarize quantifications on the gene level
+sg <- tximeta::summarizeToGene(st)
+
+## Add gene symbols
+sg <- tximeta::addIds(sg, "SYMBOL", gene = TRUE)
+sg
+```
+
+```{r}
+counts_salmon <- round(assay(sg, "counts"))
+```
+
+```{r}
+spl <- "SRR1039508"
+gns <- rownames(counts_salmon)
+quants <- data.frame(featureCounts = counts_featurecounts[gns, spl],
+                     salmon = counts_salmon[gns, spl])
+pairs(quants)
+```
+
+# iSEE Reproducible and interactive exploratory analysis of omics data 
+
+* bioconductor package
+* To be used for all `SummarizedExperimentObject` 
+* Contains additional level of reproducibility
+
+`isee(summarized_experiment_object)`
+
+# Session 3: Bulk RNAseq analysis 
+
+Different kinds of differential expression
+
+Low counts (mean values) --> high uncertainty. This is why methods like DEseq, etc use raw counts rather than normalized counts
+
+##Limma
+Use `voom`
+* data with voom trasnformation is still heteroskedastic
+* use linear models from limma that can handle this 
+
+## DEseq2 
+* `rlog`, `vsd` (variance stabilizing stabilization) to remove variance on mean after transformation
+* Useful to make PCA, heatmaps, etc
+
+## Non parametric tests
+
+## Normalization
+Take into account: 
+* ..
+
+With NB counts are not explicitly scaled 
+* except in voom/limma 
+
+Why offset rather than scaling? 
+* If we scale by "a" the values, the variance will be scaled by "a squared"
+
+Methods: 
+
+A) Correction for library size 
+Problem. RNAsrq are not absolute values, they are relative values. High counts for some genes are compensated bt lowe counts for other genes 
+
+If you have a panel of genes, this may not be the best option
+
+Few samples --> estimation of variance, etc will be wrong, so we need to correct for this --> modeling counts, with NB 
+
+B) Shrinkage --> points get closer to the staight linge. Takes advantage that we have a lot of genes 
+
+## Problem with gene counts
+Impact of differential isoform usage on gene level counts. You will get a non DE despite the gene profuvts were different. For this we can calibrate the expectations. Way to take it into account: **average transcript lengths** (see slides)
+
+# Session 4: RNAseq practical (2) Differential expression
+
+
+```{r}
+colData(sg)
+```
+
+```{r}
+colData(sg)$dex
+```
+
+```{r}
+colData(sg)$cell 
+```
+
+```{r}
+colData(sg)$dex <- relevel(colData(sg)$dex, ref = "untrt")
+colData(sg)$dex
+```
+
+```{r}
+ds_se <- DESeqDataSet(sg, design = ~ cell + dex)
+```
+
+```{r}
+stopifnot(all(colnames(counts_salmon) == rownames(meta)))
+meta$dex <- relevel(meta$dex, ref = "untrt")
+ds_matrix <- DESeqDataSetFromMatrix(countData = counts_salmon, 
+                                    colData = meta,
+                                    design = ~ cell + dex)
+```
+
+```{r}
+suppressPackageStartupMessages({
+  library(edgeR)
+})
+genetable <- data.frame(gene.id = rownames(counts_salmon),
+                        stringsAsFactors = FALSE)
+stopifnot(all(rownames(meta) == colnames(counts_salmon)))
+dge <- DGEList(counts = counts_salmon, 
+               samples = meta, 
+               genes = genetable)
+names(dge)
+```
+
+```{r}
+avetxlengths <- assay(sg, "length")
+stopifnot(all(rownames(avetxlengths) == rownames(counts_salmon)))
+stopifnot(all(colnames(avetxlengths) == colnames(counts_salmon)))
+avetxlengths <- avetxlengths/exp(rowMeans(log(avetxlengths)))
+offsets <- log(calcNormFactors(counts_salmon/avetxlengths)) + 
+  log(colSums(counts_salmon/avetxlengths))
+dge <- scaleOffset(dge, t(t(log(avetxlengths)) + offsets))
+names(dge)
+```
+
+```{r}
+dge <- edgeR::calcNormFactors(dge)
+dge$samples
+```
+
+## Exploratory analysis 
+
+```{r}
+vsd <- DESeq2::vst(ds_se)
+```
+
+```{r}
+class(vsd)
+```
+
+```{r}
+head(colData(vsd), 3)
+```
+
+```{r}
+DESeq2::plotPCA(vsd, intgroup = "cell")
+```
+
+```{r}
+DESeq2::plotPCA(vsd, intgroup = "dex")
+```
+
+```{r}
+plotMDS(dge, top = 500, labels = NULL, col = as.numeric(dge$samples$dex), 
+        pch = as.numeric(dge$samples$cell), cex = 2, gene.selection = "common")
+```
+
+## Differential expression analysis
+
+Transformation is a bit conservative, we don't want to loose a lot of signal from the genes 
+
+```{r}
+ds_se <- DESeq2::DESeq(ds_se)
+DESeq2::plotDispEsts(ds_se)
+```
+
+```{r}
+res <- DESeq2::results(ds_se)
+head(res)
+```
+
+```{r}
+mcols(res, use.names = TRUE)
+```
+
+```{r}
+summary(res)
+```
+```{r}
+hist(res$pvalue)
+```
+
+
+```{r}
+hist(log10(res$pvalue))
+```
+
+```{r}
+## We also add a couple of extra columns that will be useful for the interactive
+## visualization later
+res$log10BaseMean <- log10(res$baseMean)
+res$mlog10PValue <- -log10(res$pvalue)
+rowData(ds_se)$log10Dispersion <- log10(rowData(ds_se)$dispersion)
+rowData(ds_se)$DESeq2_dex_trt_vs_untrt <- res
+```
+
+```{r}
+res.05 <- results(ds_se, alpha = 0.05)
+table(res.05$padj < 0.05)
+```
+
+```{r}
+resLFC1 <- results(ds_se, lfcThreshold = 1)
+summary(resLFC1)
+```
+
+```{r}
+table(resLFC1$padj < 0.1)
+```
+
+```{r}
+plotCounts(ds_se, gene = "ENSG00000000003.14", intgroup = "dex", 
+           normalized = TRUE, transform = FALSE)
+```
+
+### Performing differential expression testing with edgeR
+
+```{r}
+names(dge)
+```
+
+```{r}
+design <- model.matrix(~ cell + dex, data = dge$samples)
+design
+```
+
+```{r}
+keep <- edgeR::filterByExpr(dge, design)
+dge <- dge[keep, ]
+dge <- edgeR::estimateDisp(dge, design)
+edgeR::plotBCV(dge)
+```
+
+
+```{r}
+fit <- edgeR::glmQLFit(dge, design)
+qlf <- edgeR::glmQLFTest(fit, coef = ncol(design))
+tt.all <- edgeR::topTags(qlf, n = nrow(dge), sort.by = "none") # all genes
+hist(tt.all$table$PValue)
+```
+
+```{r}
+tt <- edgeR::topTags(qlf, n = nrow(dge), p.value = 0.1) # genes with adj.p<0.1
+tt10 <- edgeR::topTags(qlf) # just the top 10 by default
+tt10
+```
+
+```{r}
+shared <- intersect(rownames(res), tt.all$table$gene.id)
+table(DESeq2 = res$padj[match(shared, rownames(res))] < 0.1, 
+      edgeR = tt.all$table$FDR[match(shared, tt.all$table$gene.id)] < 0.1)
+```
+
+```{r}
+plot(rank(res$pvalue[match(shared, rownames(res))]), 
+     rank(tt.all$table$PValue[match(shared, tt.all$table$gene.id)]), 
+     cex = 0.1, xlab = "DESeq2", ylab = "edgeR")
+```
+
+```{r}
+treatres <- edgeR::glmTreat(fit, coef = ncol(design), lfc = 1)
+tt.treat <- edgeR::topTags(treatres, n = nrow(dge), sort.by = "none")
+```
+
+## Multiple testing 
+
+```{r}
+sum(res$pvalue < 0.05, na.rm = TRUE)
+```
+
+```{r}
+sum(!is.na(res$pvalue))
+```
+
+```{r}
+round(sum(!is.na(res$pvalue)) * 0.05)
+```
+
+```{r}
+round(sum(!is.na(res$pvalue)) * 0.05) # expected 'null' less than 0.05
+```
+
+```{r}
+sum(res$pvalue < 0.05, na.rm = TRUE) # observed p < .05
+```
+
+```{r}
+# expected ratio of false positives in the set with p < .05
+round(sum(!is.na(res$pvalue))*0.05 / sum(res$pvalue < 0.05, na.rm = TRUE), 2)
+```
+
+```{r}
+sum(res$padj < 0.1, na.rm = TRUE)
+```
+
+## Plotting results
+
+```{r}
+library(apeglm)
+DESeq2::resultsNames(ds_se)
+```
+
+Shrinkage of log fold changes, especially for genes that have a low expression values. It will depend on the uncertainty
+
+```{r}
+res <- DESeq2::lfcShrink(ds_se, coef = "dex_trt_vs_untrt", type = "apeglm")
+DESeq2::plotMA(res, ylim = c(-5, 5))
+```
+
+## MA/Smear plot **edgeR**
+
+```{r}
+edgeR::plotSmear(qlf, de.tags = tt$table$gene.id)
+```
+
+```{r}
+suppressPackageStartupMessages({
+  library(pheatmap)
+})
+mat <- assay(vsd)[head(order(res$padj), 30), ]
+mat <- mat - rowMeans(mat)
+df <- as.data.frame(colData(vsd)[, c("cell", "dex")])
+pheatmap(mat, annotation_col = df)
+```
+
+## Interactive visualization
+
+```{r}
+suppressPackageStartupMessages({
+  library(iSEE)
+})
+app <- iSEE(ds_se)
+# shiny::runApp(app)
+```
+
+```{r}
+res$symbol <- mapIds(org.Hs.eg.db,
+                     keys = gsub("\\.[0-9]+$", "", row.names(res)),
+                     column = "SYMBOL",
+                     keytype = "ENSEMBL",
+                     multiVals = "first")
+
+resOrdered <- res[order(res$padj), ]
+head(resOrdered)
+```
+
+```{r}
+resOrderedDF <- as.data.frame(resOrdered)[seq_len(100), ]
+write.table(cbind(id = rownames(resOrderedDF), resOrderedDF), 
+            file = "results.txt", quote = FALSE, sep = "\t",
+            row.names = FALSE)
+```
+
+
+# Automated pipeline RNAseq 
+
+ARMOR 
+https://github.com/csoneson/ARMOR
