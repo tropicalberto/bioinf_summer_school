@@ -1,0 +1,59 @@
+---
+title: “Friday notes"
+author: “Alberto Gil"
+date: " `r format(Sys.time(), '%A %B %d, %Y (%H:%M:%S)')` "
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    code_folding: hide
+  word_document: default
+geometry: a4paper,headheight=80pt,bottom=30mm,footskip=60pt,right=16mm,left=22mm
+fontsize: 9pt
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Session 1 Single RNAseq
+
+Koen van der Berge, Ghent University
+
+Reverse transcription of a single cell RNA is very inefficient 
+
+Applications: 
+* Dissecting cell states
+* Transcriptional regulation
+* Assess technical variability from single cells with sequecing (or biological variability)
+* identify rare cell types
+* Track development of single cells 
+
+Cell identity: cell type (permanent type) and cell state (transient state)
+
+scRNA protocols:
+* droplet-based. low signal to noise ratio. no transcript level resolution, only gene resolution
+* platelet based. high signal to noise ratio. transcript level resolution, we can use Salmon with this kind of data
+
+cell barcode is the same for all oligonucleotides in a single bead
+
+UMI --> between cell normalization is really important
+
+0 in plate-based SMART-Seq because biological effects and technical effects 
+droplet based counts: counts are much lower compared to plate based methods
+
+sc methods have much more noise than bulk RNAseq 
+
+non linear dimensionality methods like tSNE: distance between points is non linear, beware that. Useful for 2 first dimensions, for more dimensions it tends to break down 
+
+NB distribution doesnt fit well data from plate based methods (because we have a lot of 0 counts)
+
+inflation is not required for droplet based methods ? (there's no peak at 0's in the gene expression distribution)
+
+**Batch effects**. They can induce the generation of artificial clusters with dimensionality reduction. Possible effects: 
+* Nuisance effecrs: detection rate is a technical variability that the ata has. That is why PCA is not appropiate for scRNA. Thsi is due to the high balance of 0's 
+
+scRNAseq data approaches. First dimensionality reduction. then DE. Higher chance to have more FPs, we are using the data twice! (high FDR) 
+
+# Session 2 Mass spectrometry based proteomics
