@@ -1,0 +1,131 @@
+---
+title: "monday"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Set message=FALSE to avoid showing output
+
+```{r, message=FALSE}
+library(ggplot2)
+library(readr)     # for data input
+```
+
+# Session 1: Martin Morgan -- Rosswell park comprehensive cancer center 
+
+## Playing with objects
+```{r}
+x <- rnorm(1000)
+table(x > 0.05)
+```
+
+```{r}
+y <- x + rnorm(1000)
+df <- data.frame(y,x)
+fit <- lm(y~x, data=df)
+
+{plot(y ~ x, df)
+abline(fit,  col="red", lwd=3, lty=2)}
+```
+
+```{r}
+dim(df)
+```
+
+```{r}
+ggplot(df, aes(x=x,y=y)) +
+ geom_point() +
+ geom_smooth() + 
+  geom_smooth(method  = "lm")
+```
+
+```{r}
+anova(fit)
+```
+
+```{r}
+# Methods available for a specific class?
+methods(class = "lm")
+```
+
+```{r}
+plot(fit)
+```
+
+### Remove elements from environment
+
+```{r}
+rm(x, y)
+```
+
+## Bioconductor
+
+Biostring: package for sequencing data
+```{r}
+sequences <- c("AGGGCATA","CCCAC")
+nchar(sequences)
+```
+
+```{r}
+library(Biostrings)   # to work with DNA sequences
+
+dna <- DNAStringSet(sequences)
+dna
+```
+
+IUPAC symbols for DNA
+* some symbols denote ambiguity
+```{r}
+DNA_ALPHABET
+```
+
+```{r}
+methods(class="DNAStringSet")
+```
+
+
+```{r}
+?readDNAStringSet
+```
+
+
+```{r}
+tail(readLines(file, 45), 10)
+```
+
+```{r}
+filepath4 <- system.file("extdata", "dm3_upstream2000.fa.gz",
+                         package="Biostrings")
+dnaseq <- readDNAStringSet(filepath4)
+dnaseq
+```
+
+Calculate GC content 
+```{r}
+letterFrequency(dnaseq, "GC", as.prob=TRUE)
+
+```
+
+
+# Session 2: Reproducible research with RMarkdown 
+
+cache=True, doesnt rerun the code chunk but tried to reload it (important to save computational time)
+
+```{r}
+sessionInfo()
+```
+
+Interactive tables: 
+
+```{r}
+# DT::datatable(cars)
+```
+
+Avoid running a chunk (in case that it fails) if you use eval=FALSE
+```{r eval=FALSE}
+# object that doesn't exist:
+y + n 
+```

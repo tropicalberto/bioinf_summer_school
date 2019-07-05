@@ -1,0 +1,214 @@
+---
+title: “Wednesday notes"
+author: “Alberto Gil"
+date: " `r format(Sys.time(), '%A %B %d, %Y (%H:%M:%S)')` "
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    code_folding: hide
+  word_document: default
+geometry: a4paper,headheight=80pt,bottom=30mm,footskip=60pt,right=16mm,left=22mm
+fontsize: 9pt
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1. GSEA 
+
+Sets do not need to be:
+* exhaustive 
+* disjoint
+
+GO
+Pathways:
+* Reactome, MSigDB, KEGG, PantherDB, Hallmarks
+
+MSigDB:
+* c1 to c7 
+* c6: cancer related signatures
+* c7: immunologic signatures 
+
+## Approach 1: hypergeometric test
+
+Hypergeometric test: `fisher.ttest()`
+
+Requires a threshold, e.g. p-value 0.05
+
+* Fisher hypergeometric test: **GOstats, limma**: `goana()` Usage: goana(significant_genes, all_genes, organism) 
+* Conditional hypergeometric to accomodate GO DAG (tailored to GO?), *GOstats*
+* but: artificial division into 2 groups (DE vs nonDE)
+
+## Approach 2: Enrichment score 
+
+Mootha et al. 2003. Modified Subramanian et al. 2005
+
+Calculate **Running sum**
+
+## Approach 3: Category t-test
+
+Jiang & Getleman 2007
+
+Represent expression on control vs on other condition for a single gene set, check how a linear approach fits the data.
+
+1) Summarize t (or another statistic) for each gene in the set
+2) Test for significance by permuting the subject labels
+
+Much more straight forward to implement
+
+## Competitive vs self-contained grou phypothesis 
+
+Goeman & Buhlmann 2007
+* Competitive null (Approach 1&2): genes in gene set do not have a stronger association with the subject condition than other genes. Distingishing more from less important sets
+* Self contained null (Approach 3): genes in gset do not have any association with the subject condiiton. Assessing individual sets 
+* Probably self-contained null is closer to actual question of interest
+* Permuting subjects (rather than genes) is appropiate
+
+## Approach 4: Linear models 
+
+Hummel et al. 2008 **GlobalAncova**
+* BRCA cancer with stage II or stage III. Do genes in a single pathway (e.g. p53) show different activity at the two stages? 
+* Linear model incorporates covariates -- sex of patient, tumor location
+
+**limma**
+* Majewski et al 2010 `romer()` and Wu and Smythe 2012 `camera()` for enrichment (competitive null) linear models 
+* Wu et al 20120 `mroast()` etc 
+
+## Approach 5: issues with sequencing data? 
+
+Correction for gene lengs, p-values per gene proportional to gene size. **Young et al. 2010** `goseq`
+
+## Approach 6: de novo discovery 
+
+Unsupervised approach. 
+* **Langfelder and Hovarth**, `WGCNA. Weighted correlation network analysis, described in **Langfelder and Horvarth 2008**
+
+## Benchmarks 
+
+See https://twitter.com/LeviWaldron1/status/1142092301403115521
+
+Package GSEABenchmarkR 
+## single cell data 
+
+## Conclusions 
+* Kharti et al. over representation analyisis review 
+* Goeman and Buhlmann competitive vs self  contained review 
+
+Bioconductor packages:
+* hypergeometric: GOstats 
+
+# 2. Introduction to statistics and machine learning 
+
+Oliver M. Crook (University of Cambridge)
+
+In statistics, K=k left: hypothetical value, right: actual value. Binomial distribution
+
+FP = type I error 
+FN = type II error 
+
+* 2 groups: **Fisher's exact test**. Exact, or assymptotic (in assymptotic we make assumptions, e.g. equal variance, etc )
+* more than 2 groups or conditions: **chi squared test**
+
+Books to read: 
+* Modern statistics for biology
+* an introduction to statistical learning
+* the elements of statistical learning 
+
+## Permutation tests 
+
+## Multiple Hypothesis testing
+
+### Family wise error rate
+* alpha: statistical power
+* V: no of FP 
+* m: number of hypothesis 
+
+### FDR
+* spikes in pvalue distribution --> you're using the wrong test 
+(in the example a continuous method was used to discrete data)
+* not uniform --> you're using the wrong test
+* no spike at pvalue 0 --> no biology
+
+## Linear model 
+
+interval (estimated with SE) small --> we can be confident about our results 
+
+In linear models as hypothesis test, the null hypothesis is that there is **some relationship between  Y and X**, but not that **there is a linear relationship between Y and X**
+
+Goodness of fit --> measured with **R^2**, explains how much variance is explained by the model
+
+## multiple linear model
+
+`pf()` function
+
+## PCA 
+
+Batch effect: large variance effect that can be explained by a experimental technique, etc 
+
+## Correspondence analysis
+
+## umap, isomap, 
+
+# Session 3: practical
+Se Rmd notebook (extra)
+
+# Session 4: principles of differential expression analysis 
+
+*Charlotte Soneson, Swiss Institute of Bioinformatics*
+
+RNAseq: typically used for learning experiment questions (general questions)
+
+**Experimental design**:
+* right kind of data
+* sufficient amount of data
+* to answer a specific question
+
+Factors that can affect experiment results: analysis batch, study center, processing control...**confounding**
+
+Batch effect: whatever other factor that can affect your values and that we cannot completely controlled
+* batch factor
+* : in different sequencing machine/operator
+
+Ways to control (but not remove!) batch effects
+* blocking: look first at 1 group, and compare the effect within the same group (e.g. male mice and female mice with treatment/placebo. 50% males with treatment 50% with placebo, same for female mice) --> block on the factors that you know 
+* randomization:
+
+With batch effect control, we can include them as **covariates** in our models 
+
+This works for statistical modeling, but not for methods not based on statistical modeling like PCA
+
+### Accounting for batch effects in practice
+Danielsson et al Briefings in bioinformatics 2015 --> TODO see method
+
+RNAseq: normalize by library size
+expression: normalize by mean expression
+
+Other design issues: replication
+* **Repliates** necessary to estimate within-condition variability
+* Variability estimates are vital for statistical testing
+
+Most of the times __with batch effects we have samples that are not independent between them__. Beware of this, because most statistical tests assume independence between samples
+
+### Model formulas and design matrices for High throughput data
+E.g. Gexp high throughput data:
+* Fit a single gene for each model
+
+limma:
+`lmFit(y, design = model.matrix(~ group))`
+
+GLM (edgeR)
+`glmFit(y, design = model.matrix(~time))`
+
+select coefficient, and you will get the statistics of the specified coefficient for each single gene (each single model)
+Once the model is fit, we need to choose which coefficient we want to apply the hypothesis test for.
+Combinations are also possible: called **contrasts**
+
+**Design matrix** --> values of the predictor variables for each sample
+
+Many ways of modeling the same exxpected value:
+See slide, chcheck which designs you check 
+(e.g group 3 vs group 2, which coefficients should I compare? )
