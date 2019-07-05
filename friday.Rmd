@@ -57,3 +57,216 @@ inflation is not required for droplet based methods ? (there's no peak at 0's in
 scRNAseq data approaches. First dimensionality reduction. then DE. Higher chance to have more FPs, we are using the data twice! (high FDR) 
 
 # Session 2 Mass spectrometry based proteomics
+
+Raw data: **infer info from peptides**, not from proteins! We latter need to infer from which protein were they coming from.
+
+* LC = liquid cromatography
+* GC = gas chromatrography
+
+Uniprot: to retrieve info from proteins/peptides 
+
+PSM score: the higher the better. Done 2 types: 
+* for the correct PSMs 
+* for the reverse database (from proteins database)
+
+Labelled Isobaric tagging: depending of the height of the sample barcode peaks (slide 25) we can quantify the relative proportions of the peptides for each of the samples 
+
+# Session 2: practical Proteomics data analysis
+
+## Libraries
+```{r, message=FALSE}
+library("MSnbase")
+library("msdata")
+```
+
+## Loading raw data 
+```{r}
+basename(fl3 <- msdata::proteomics(full.name = TRUE, pattern = "MS3TMT11"))
+```
+
+* mode = onDisk. don't load the whole data into memory (it's too big), read only a subset of it 
+```{r}
+(rw3 <- readMSData(fl3, mode = "onDisk"))
+```
+
+MS1 is not centroided, MS2 and MS3 are centroided 
+```{r}
+table(msLevel(rw3), centroided(rw3))
+```
+
+Retention time: 
+```{r}
+# rtime(msLevel(rw3))
+```
+
+## Loading identification data
+
+```{r}
+basename(idf <- msdata::ident(full.name = TRUE))
+```
+
+```{r}
+iddf <- readMzIdData(idf)
+iddf
+```
+
+```{r}
+library('ggplot2')
+```
+
+color: whether peptide comes from a decoy database or not 
+
+Separation with isDecoy is not good from what we can see in the plot 
+```{r}
+ggplot(iddf, aes(x = MS.GF.RawScore, colour = isDecoy)) +
+    geom_density()
+```
+
+## Combining raw and identification data 
+
+```{r}
+basename(quantFile <- dir(system.file(package = "MSnbase", dir = "extdata"),
+                 full.name = TRUE, pattern = "mzXML$"))
+```
+
+```{r}
+basename(identFile <- dir(system.file(package = "MSnbase", dir = "extdata"),
+                          full.name = TRUE, pattern = "dummyiTRAQ.mzid"))
+```
+
+```{r}
+msexp <- readMSData(quantFile)
+fvarLabels(msexp)
+```
+
+```{r}
+msexp <- addIdentificationData(msexp, identFile)
+fvarLabels(msexp)
+```
+
+## Quantitative data
+
+```{r}
+data(itraqdata)
+itraqdata
+```
+
+```{r}
+msnset <- quantify(itraqdata, method = "trap", reporters = iTRAQ4)
+msnset
+```
+
+```{r}
+exprs(msnset[,1])
+```
+
+```{r}
+plot(itraqdata[[1]], reporters = iTRAQ4, full = TRUE)
+```
+
+```{r}
+exprs(msnset)[1,]
+```
+
+Annotation data: 
+```{r}
+fData(msnset)[1, ]
+```
+
+```{r}
+f <- "./cptac_peptides.txt"
+getEcols(f, split = "\t")
+```
+
+```{r}
+e <- grepEcols(f, "Intensity ", split = "\t") ## careful at the space!
+(cptac <- readMSnSet2(f, ecol = e,
+                      fnames = "Sequence",
+                      sep = "\t"))
+```
+
+Selection of feature data columns with shiny app (can also be done manually if you know the name of the columns)
+```{r}
+# cptac <- selectFeatureData(cptac)
+```
+
+```{r}
+cptac <- selectFeatureData(cptac,
+                           fcol = c("Proteins",
+                                    "Potential.contaminant",
+                                    "Reverse",
+                                    "Sequence"))
+```
+
+Sample metadata:
+```{r}
+cptac$group <- rep(c("6A", "6B"), each = 3)
+cptac$sample <- rep(7:9, 2)
+sampleNames(cptac) <- sub("Intensity.", "", sampleNames(cptac))
+pData(cptac)
+```
+
+## Data processing
+
+```{r}
+table(sel_conts <- fData(cptac)$Potential.contaminant != "+")
+```
+
+```{r}
+table(sel_rev <- fData(cptac)$Reverse != "+")
+```
+
+```{r}
+(cptac <- cptac[sel_conts & sel_rev, ])
+```
+
+### Notes on missing values 
+
+Some software uses 0 fir NAs 
+```{r}
+anyNA(cptac)
+```
+
+
+```{r}
+exprs(cptac)[exprs(cptac) == 0] <- NA
+table(is.na(exprs(cptac)))
+```
+
+```{r}
+napac <- cptac
+exprs(napac)[!is.na(exprs(napac))] <- 1
+naplot(napac)
+```
+
+```{r}
+fData(cptac)$nNA <- apply(exprs(cptac), 1, function(x) sum(is.na(x)))
+table(fData(cptac)$nNA)
+```
+
+```{r}
+(cptac <- filterNA(cptac))
+```
+
+### Log transformation 
+
+```{r}
+(cptac <- log(cptac, base = 2))
+```
+
+### Normalization
+Quantile normalization
+```{r}
+(cptac <- normalise(cptac, method = "quantiles"))
+```
+
+### Summarization
+```{r}
+(cptac <- combineFeatures(cptac, fcol = "Proteins", method = "mean"))
+```
+
+```{r}
+sessionInfo()
+```
+
+# Session 3: 
