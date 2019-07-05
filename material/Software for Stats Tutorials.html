@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<!-- saved from url=(0052)https://statomics.github.io/pda/pages/software4stats -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <title>Software for Stats Tutorials</title>
+    
+    <meta name="author" content="statOmics">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="./Software for Stats Tutorials_files/bootstrap.2.2.2.min.css" rel="stylesheet">
+    <link href="./Software for Stats Tutorials_files/style.css" rel="stylesheet" type="text/css" media="all">
+    <link href="./Software for Stats Tutorials_files/kbroman.css" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+
+    <!-- atom & rss feed -->
+    <link href="https://statomics.github.io/pdanil" type="application/atom+xml" rel="alternate" title="Sitewide ATOM Feed">
+    <link href="https://statomics.github.io/pdanil" type="application/rss+xml" rel="alternate" title="Sitewide RSS Feed">
+
+  </head>
+
+  <body>
+    <div class="navbar">
+      <div class="navbar-inner">
+        <div class="container-narrow">
+          <a class="brand" href="https://statomics.github.io/pda">Proteomics Data Analysis</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="container-narrow">
+
+      <div class="content">
+        <p>There are three options to work with the software:</p>
+
+<ol>
+  <li>Install RStudio locally</li>
+  <li>Using an online binder docker environment that launches R studio immediately. Remark: This tends to be unstable in combination with shiny Apps, the App gets disconnected when there is no browser activity in the App window.</li>
+  <li>Using an online binder docker environment that launches a Jupyter binder environment. See Note above.</li>
+  <li>Using an offline docker that launches a Jupyter environment. Most stable way to</li>
+</ol>
+
+<h3 id="1-local-installation">1. Local installation</h3>
+
+<ul>
+  <li>Install <a href="https://www.rstudio.com/products/rstudio">R/Rstudio</a></li>
+  <li>Install Bioconductor packages:
+    <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="s">source("http://bioconductor.org/biocLite.R")</span>
+<span class="s">biocLite()</span>
+</code></pre></div>    </div>
+  </li>
+  <li>Install MSnbase
+    <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="s">biocLite(“MSnbase”)</span>
+</code></pre></div>    </div>
+  </li>
+  <li>Install devtools and MSqRob
+    <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="s">biocLite("devtools")</span>
+<span class="s">devtools::install_github("statOmics/MSqRob@MSqRob0.7.5")</span>
+</code></pre></div>    </div>
+  </li>
+  <li>Download and unzip pda master tree
+    <ul>
+      <li>Go to the pda site on github: <a href="https://github.com/statOmics/pda">https://github.com/statOmics/pda</a></li>
+      <li>Click on the clone/download button and select download zip
+<img src="./Software for Stats Tutorials_files/downloadPdaMasterTree.png" alt=""></li>
+      <li>Unzip the repository</li>
+      <li>Open Rstudio and go to the unzipped folder</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="2-getting-started-with-msqrob-using-an-online-docker-container">2. Getting started with MSqRob using an online docker container</h3>
+
+<p>Docker is a platform to develop, deploy, and run applications inside containers, improving security, reproducibility, and scalability in software development and data science. Docker containers differ from virtual machines because they take fewer resources, are very portable, and are faster to spin up.</p>
+
+<ul>
+  <li>Launch an R studio interface in an R docker along with bioconductor packages for proteomics.</li>
+</ul>
+
+<p><a href="http://mybinder.org/v2/gh/statOmics/shinyTest/master?urlpath=rstudio"><img src="./Software for Stats Tutorials_files/badge.svg" alt="Binder"></a></p>
+
+<ul>
+  <li>Alternatively, you can launch R studio via the jupyter binder environment:</li>
+</ul>
+
+<p><a href="http://mybinder.org/v2/gh/statOmics/shinyTest/master"><img src="./Software for Stats Tutorials_files/badge.svg" alt="Binder"></a></p>
+
+<p>Once inside Jupyter Notebook, RStudio Server should be an option under the menu
+“New”:</p>
+
+<p><img src="./Software for Stats Tutorials_files/rstudio-session.jpg" alt=""></p>
+
+<h3 id="3-install-the-docker-container-locally">3. Install the docker container locally</h3>
+
+<h4 id="31-generate-and-install-docker-container">3.1 Generate and install docker container</h4>
+
+<ul>
+  <li>You can install your own local docker by downloading the entire PDA master branch of the  githyb repository and invoking in a console:</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker build &lt;path to proteomicsShortCourse directory&gt; -t msqrob_docker
+</code></pre></div></div>
+<ul>
+  <li>This only has to be done once and generates a container that is always exactly alike.</li>
+</ul>
+
+<h4 id="31b-alternatively-we-can-install-from-existing-docker-image">3.1b Alternatively we can install from existing docker image</h4>
+
+<p>A docker image is a blue print of a docker container that can be used to quickly generate containers that are all exactly alike.</p>
+
+<ol>
+  <li>
+    <p>Open a terminal
+<img src="./Software for Stats Tutorials_files/installDocker1.png" alt="Figure Launch Docker 1"></p>
+  </li>
+  <li>
+    <p>In the Gulbenkian Institute you find the docker image on your local machine. Type</p>
+  </li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sudo docker load -i /media/gtpb_shared_drive/To_Participant/statsDocker/msqrob_docker.tar
+</code></pre></div></div>
+
+<p>If the docker image is on another location, you have to adjust the path “/media/gtpb_shared_drive/To_Participant/statsDocker/msqrob_docker.tar” to “yourPathName/yourDockerImageName”.</p>
+
+<p>We run the command as a super user
+<code class="highlighter-rouge">sudo</code> because normal users do not have the permission to launch docker on the PCs in the tutorial room.
+The <code class="highlighter-rouge">docker</code> command launches docker.
+The <code class="highlighter-rouge">load</code> command will enable a new docker to be installed locally.
+The switch <code class="highlighter-rouge">-i</code> stand for input
+Then we give the full path to the docker, which is available on the share.</p>
+
+<p><img src="./Software for Stats Tutorials_files/installDocker2.png" alt="Figure Launch Docker 2"></p>
+
+<p>Now the docker installations starts.</p>
+
+<p>Note, the installation only has to be executed done once.</p>
+
+<h4 id="32-launch-the-docker-container">3.2 Launch the docker container</h4>
+
+<p>Upon installation, we can launch the docker image on our machine.</p>
+
+<ol>
+  <li>
+    <p>Open a terminal</p>
+  </li>
+  <li>
+    <p>Launch the docker by typing the command.</p>
+  </li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sudo docker run -p 8888:8888 msqrob_docker
+</code></pre></div></div>
+
+<p>You have to run the command as a super user (sudo) because normal users do not have the permission to launch docker on the PCs in the tutorial roam.
+The <code class="highlighter-rouge">docker</code> command launches docker.
+The <code class="highlighter-rouge">run</code> command enables you to launch a Docker.
+The <code class="highlighter-rouge">-p 8888:8888</code> command is used to listen to port 8888 of the docker and to pipe it to the port 8888 on the local machine.
+The will enable us to view the jupyter server in the Docker via a webbrowser.</p>
+
+<p>We can interact with the docker via a web browser.</p>
+
+<ol>
+  <li>Open Firefox</li>
+</ol>
+
+<p><img src="./Software for Stats Tutorials_files/launchDocker1b.png" alt="Figure Launch Docker 1"></p>
+
+<p>A new window will appear where you have to fill a the token.
+You can copy the link token from the terminal.
+Here, it was,</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://c924e5fb54b5:8888/?token=dd01e2e228d8200e8e2cba2f8fff2a9396f4c22b9068c4d5&amp;token=dd01e2e228d8200e8e2cba2f8fff2a9396f4c22b9068c4d5
+</code></pre></div></div>
+
+<p>we first replace the machine name <code class="highlighter-rouge">c924e5fb54b5</code> by localhost and paste the adjusted address in the browser.</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://localhost:8888/?token=dd01e2e228d8200e8e2cba2f8fff2a9396f4c22b9068c4d5&amp;token=dd01e2e228d8200e8e2cba2f8fff2a9396f4c22b9068c4d5
+</code></pre></div></div>
+
+<p>Alternatively, you can connect paste the address</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://localhost:8888/
+</code></pre></div></div>
+<p>in the browser and paste the token when requested.</p>
+
+<p>Note, that copying in linux is possible via highlighting text. Pasting can be done by pushing the middle mouse button.</p>
+
+<p><img src="./Software for Stats Tutorials_files/launchDocker2.png" alt="Figure Launch Docker 2"></p>
+
+<p>Press enter! Then the jupyter hub environment will launch.</p>
+
+<p><img src="./Software for Stats Tutorials_files/jupyterHub.png" alt="Figure "></p>
+
+<p>Select New&gt;Rstudio Session to launch the statistical software R.
+Now an interactive statistical programming environment will open in the browser that runs on a cloud server.</p>
+
+<h3 id="close-the-docker-container">Close the docker container</h3>
+
+<p>Only if you work with a local Docker.</p>
+<ol>
+  <li>Close RStudio</li>
+  <li>Log off the jupyter environment</li>
+  <li>Open a new terminal and type the command</li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sudo docker stop c924e5fb54b5
+</code></pre></div></div>
+<p>where you replace <code class="highlighter-rouge">c924e5fb54b5</code> with the name of your docker.</p>
+
+      </div>
+      <hr>
+      <footer>
+        <p><small>
+  <!-- start of Karl's footer; modify this part -->
+          <a href="http://statomics.github.io/">statOmics</a>
+  <!-- end of Karl's footer; modify this part -->
+        </small></p>
+      </footer>
+
+    </div>
+
+    
+  
+
+
+</body></html>
