@@ -1,0 +1,195 @@
+---
+title: "1_markdown_practical"
+author: "Alberto Gil"
+date: "7/1/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readr)
+library(dplyr)
+```
+
+# Bioconductor tutorial
+
+* bioconductor package explorer
+```{r}
+BiocManager::available('readr')
+BiocManager::install('readr')
+```
+
+```{r, cache=TRUE}
+# pdata_file <- file.choose()
+pdata_file <- "/Users/a.gil.jimenez/bioinf_summer_school/extdata/ALL-sample-sheet.csv"
+```
+
+```{r}
+pdata <- read_csv(pdata_file)
+```
+
+* tibble: data frame with special characteristics
+```{r}
+pdata
+```
+
+```{r}
+summary(pdata)
+```
+
+
+```{r}
+pdata %>% arrange(desc(age))
+```
+
+
+* Exercise How would you use arrange() to order the samples from youngest to oldest, with individuals of equal age ordered by sex?
+
+```{r}
+pdata %>% arrange(desc(age), order(sex))
+```
+
+### Summarize, group_by()
+
+```{r}
+pdata %>% summarize(n=n())
+```
+```{r}
+pdata %>% summarize(n=n(), mean_age=mean(age, na.rm=TRUE))
+```
+
+```{r}
+pdata %>% 
+  group_by(sex) %>% 
+  summarize(
+    n=n(), mean_age=mean(age, na.rm=TRUE)
+    )
+```
+
+
+```{r}
+pdata  %>% group_by(age) %>% summarize(n=n())
+```
+
+### Continued data processing 
+
+```{r}
+library(Biostrings)
+sequences <- c("AAATCGA", "ATACAACAT", "TTGCCA")
+dna_seqs <- DNAStringSet(sequences)
+dna_seqs
+```
+
+```{r}
+length(dna_seqs)
+nchar(dna_seqs)
+sample(dna_seqs)
+dna_seqs[1:2]
+```
+
+Reverse sequences:
+```{r}
+reverse(dna_seqs)
+```
+
+```{r}
+reverseComplement(dna_seqs)
+```
+
+```{r}
+DNAStringSet(c("AAJUA"))
+```
+
+```{r}
+?DNA_ALPHABET
+```
+
+```{r}
+IUPAC_CODE_MAP
+```
+
+* this can also be used to find help of multiple object types inside a function/methods
+
+```{r}
+?'reverseComplement,DNAStringSet-method'
+```
+
+
+Explore package available functions: 
+
+```{r}
+browseVignettes(package = "Biostrings")
+```
+
+# S4 classes/objects 
+
+```{r}
+getClassDef("DNAStringSet")
+```
+
+```{r}
+fa_file <-
+    system.file(package="Biostrings", "extdata", "dm3_upstream2000.fa.gz")
+```
+
+
+```{r}
+dna <- readDNAStringSet(fa_file)
+```
+
+Exercise Use letterFrequency() to determine GC content of each of the DNA sequences in  dna. The letters argument should be "GC"; as.prob = TRUE returns values between 0 and 1. The data is returned as a matrix with 1 column.
+
+```{r}
+gc <- letterFrequency(dna, letters="GC",as.prob=TRUE)
+```
+
+```{r}
+hist(gc)
+```
+
+```{r}
+plot(density(gc))
+```
+
+```{r}
+gc_tb <- dna %>% 
+          letterFrequency(letters="GC", as.prob=TRUE) %>% 
+          tibble::as_tibble()
+```
+
+```{r}
+ggplot(data=gc_tb, aes('G|C')) + 
+  geom_histogram()
+```
+
+
+```{r}
+ggplot(data=gc_df, aes(G.C)) + 
+  geom_histogram()
+```
+
+
+Generic functions: handles all kind of oreadDNAStringSetbjects
+
+standard Genetic function: does a similar thing, 
+
+```{r}
+getAnywhere("anova.lm")
+```
+
+```{r}
+# remember DNAStringSet inherits XStringset
+?'matchPattern,XStringSet-method'
+```
+
+
+```{r}
+fa_file %>% 
+  readDNAStringSet() %>% 
+  letterFrequency("GC", as.prob=TRUE) %>%
+  tibble::as_tibble() %>% 
+  summarize(n=n(), mean_gc=mean("G|C"))
+```
