@@ -1,21 +1,28 @@
-
-
-[Summer school](https://uclouvain-cbio.github.io/BSS2019/#course-material)
+[UCLovain Bioinformatics Summer school](https://uclouvain-cbio.github.io/BSS2019/#course-material)
 
 # Monday
+
 ## Introduction to R and Bioconductor 
+*Laurent Gatto* 
 Material: 
+* 
+* 
 **keywords**:
 
 ## Rmarkdown for reproducible research
+*
 Material:
 
 ## Practical: R/Bioconductor and Rmarkdown 
+*
 Material:
 
 # Tuesday
 ## Bioconductor core technologies (SE, Genomics ranges) 
 *Martin Morgan*
+
+Keywords: genomic regions, 
+Packages: 
 
 ## Visualisation
 *Laurent Gatto*
@@ -41,3 +48,20 @@ Material:
 
 Material:
 * [Slides]
+
+# Thrusday
+
+## High throughput sequencing data processing 
+
+## Practical: RNASeq
+
+## Bulk RNA-Seq 
+
+## Practical: RNASeq
+
+# Friday 
+## Single cell RNA-seq
+
+## Mass spectrometry-based proteomics 
+
+## Quantitative proteomics data analysis 
