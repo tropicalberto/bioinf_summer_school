@@ -1,12 +1,14 @@
 [UCLovain Bioinformatics Summer school](https://uclouvain-cbio.github.io/BSS2019/#course-material)
 
 # Monday
-
-## Introduction to R and Bioconductor 
+* [Monday notes](https://github.com/tropicalberto/bioinf_summer_school/blob/master/monday.Rmd)
+* **Monday html TODO**
+### Introduction to R and Bioconductor 
 *Laurent Gatto* 
 Material: 
-* 
-* 
+* notes (poor): 
+* Templates: [Rmd]() and [html]()
+
 **keywords**:
 
 ## Rmarkdown for reproducible research
@@ -18,6 +20,8 @@ Material:
 Material:
 
 # Tuesday
+* [Tuesday notes Rmd](https://github.com/tropicalberto/bioinf_summer_school/blob/master/tuesday.Rmd)
+* [Tuesday html](https://github.com/tropicalberto/bioinf_summer_school/blob/master/tuesday.html)
 ## Bioconductor core technologies (SE, Genomics ranges) 
 *Martin Morgan*
 
@@ -32,7 +36,8 @@ Packages:
 ## Working with biological annotations 
 
 # Wednesday
-
+* [Wednesday notes Rmd](https://github.com/tropicalberto/bioinf_summer_school/blob/master/wednesday.Rmd)
+* [Wednesday notes html](https://github.com/tropicalberto/bioinf_summer_school/blob/master/wednesday.html)
 ## Gene set enrichment analysis (with practical) 
 
 ## Elements of statistics and machine learning
@@ -40,17 +45,19 @@ Packages:
 ## Practical: stats/ML 
 *Oli*
 
-## Principles of differential expression analysis 
-
+## Principles of differential expression analysis (experimental design and batch effect) 
 *Charlotte Soneson, Swiss Institute of Bioinformatics*
-
-**keywords**: experimental design, batch effect, multiple hypothesis testing
+**keywords**: experimental design, batch effect, multiple hypothesis testing, linear modeling
 
 Material:
-* [Slides]
+* [Slides](https://github.com/tropicalberto/bioinf_summer_school/blob/master/wed_6_ExperimentalDesign__DE.pdf)
+
+
+
 
 # Thrusday
-
+* **Thursday notes where are they?**
+* **Thursday markdown TODO**
 ## High throughput sequencing data processing 
 
 ## Practical: RNASeq
@@ -60,6 +67,7 @@ Material:
 ## Practical: RNASeq
 
 # Friday 
+* [Friday notes Rmd](https://github.com/tropicalberto/bioinf_summer_school/blob/master/friday.Rmd) **FRiday html TODO**
 ## Single cell RNA-seq
 
 ## Mass spectrometry-based proteomics 
