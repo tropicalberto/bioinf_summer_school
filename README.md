@@ -1,4 +1,4 @@
-[UCLovain Bioinformatics Summer school](https://uclouvain-cbio.github.io/BSS2019/#course-material)
+[UCLovain Bioinformatics Summer school webpage](https://uclouvain-cbio.github.io/BSS2019/#course-material)
 
 # Monday
 * [Monday notes](https://github.com/tropicalberto/bioinf_summer_school/blob/master/monday.Rmd)
